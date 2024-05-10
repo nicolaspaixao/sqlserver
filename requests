@@ -1,0 +1,28 @@
+SELECT 
+    es.login_name AS user_name,
+    r.session_id,
+    s.text,
+    r.start_time,
+    r.status,
+    r.command,
+    r.wait_type as Aguardando_recursos,
+    mg.granted_memory_kb / 1024 as Qtd_Memoria_Cedida_MB,
+    mg.required_memory_kb / 1024 as Qtd_Memoria_Inicialmente_MB,
+    mg.used_memory_kb / 1024 as Qtd_Memoria_Consumida_MB,
+    r.wait_time / 1000 as Tempo_espera_segundos,
+    r.cpu_time / 1000 as Tempo_uso_CPU_segundos,
+    r.total_elapsed_time / 1000 as Tempo_execucao_segundos
+FROM sys.dm_exec_requests r
+
+CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) s
+
+LEFT JOIN sys.dm_exec_sessions es ON r.session_id = es.session_id
+
+LEFT JOIN sys.dm_exec_query_memory_grants mg ON r.session_id = mg.session_id
+
+WHERE 1=1
+
+ORDER BY mg.granted_memory_kb desc
+
+--select * from  sys.dm_exec_requests r
+--EXEC sp_who2;
