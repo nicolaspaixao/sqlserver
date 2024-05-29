@@ -1,0 +1,19 @@
+------------------------------------------------------------------------------
+--> Consultar procedures com o nome da tabela
+------------------------------------------------------------------------------
+
+SELECT * FROM SYS.procedures p
+join sys.syscomments s on p.object_id = s.id
+where text like '%v_control_3_Diligencia_Cad%'
+ 
+
+ 
+------------------------------------------------------------------------------
+--> Consultar procedures com o nome da tabela em todos os bancos de dados
+------------------------------------------------------------------------------
+ 
+select 'use ' + name  + ' '+
+'SELECT * FROM SYS.procedures p
+join sys.syscomments s on p.object_id = s.id
+where text like ' + '''' + '%rep_600_andamentos_zresumo%' + ''''
+from sys.databases
