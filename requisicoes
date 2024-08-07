@@ -1,17 +1,25 @@
-SELECT 
-    es.login_name AS user_name,
-    r.session_id,
-    s.text,
-    r.start_time,
-    r.status,
-    r.command,
-    r.wait_type as Aguardando_recursos,
-    mg.granted_memory_kb / 1024 as Qtd_Memoria_Cedida_MB,
-    mg.required_memory_kb / 1024 as Qtd_Memoria_Inicialmente_MB,
-    mg.used_memory_kb / 1024 as Qtd_Memoria_Consumida_MB,
-    r.wait_time / 1000 as Tempo_espera_segundos,
-    r.cpu_time / 1000 as Tempo_uso_CPU_segundos,
-    r.total_elapsed_time / 1000 as Tempo_execucao_segundos
+SELECT
+     es.login_name AS user_name
+	,es.program_name
+	--r.plan_handle,
+    ,concat( 'kill ', cast(r.session_id as nvarchar(1000))) as session_id
+	,r.session_id
+	,r.blocking_session_id as Sessao_Bloqueadora
+	--r.total_elapsed_time / 1000 AS Tempo_Bloqueado_ms,
+    ,s.text
+    ,r.start_time
+    ,r.status
+    ,r.command
+    ,r.wait_type as Aguardando_recursos
+    ,mg.granted_memory_kb / 1024 as Qtd_Memoria_Cedida_MB
+    ,mg.required_memory_kb / 1024 as Qtd_Memoria_Inicialmente_MB
+    ,mg.used_memory_kb / 1024 as Qtd_Memoria_Consumida_MB
+    ,r.wait_time / 1000 as Tempo_espera_segundos
+    ,r.cpu_time / 1000 as Tempo_uso_CPU_segundos
+    ,r.total_elapsed_time / 1000 as Tempo_execucao_segundos
+    ,qs.Leituras_Disco
+    ,qs.Leituras_Logicas
+    ,qs.Escritas_Logicas
 FROM sys.dm_exec_requests r
 
 CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) s
@@ -20,9 +28,24 @@ LEFT JOIN sys.dm_exec_sessions es ON r.session_id = es.session_id
 
 LEFT JOIN sys.dm_exec_query_memory_grants mg ON r.session_id = mg.session_id
 
+OUTER APPLY(
+			SELECT
+			 sum((qs.total_physical_reads * 8) / 1024 ) AS Leituras_Disco
+			,sum((qs.total_logical_reads * 8 ) / 1024 ) AS Leituras_Logicas
+			,sum((qs.total_logical_writes * 8) / 1024 ) AS Escritas_Logicas
+			FROM sys.dm_exec_query_stats AS qs
+			WHERE  r.plan_handle = qs.plan_handle
+) qs
+
+
 WHERE 1=1
+--and r.plan_handle = '0x0500090065FD8107C0DCD8F90000000001000000000000000000000000000000000000000000000000000000'
+--and r.status = 'running'
+--and es.login_name = 'OLIRAMOS\ni.evangelista'
+ 
+ORDER BY r.start_time --desc
 
-ORDER BY mg.granted_memory_kb desc
-
---select * from  sys.dm_exec_requests r
+--select * from  sys.dm_exec_requests rr
 --EXEC sp_who2;
+
+
