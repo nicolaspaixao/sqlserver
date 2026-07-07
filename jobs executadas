@@ -7,9 +7,9 @@ begin try drop table #JobStatus end try begin catch end catch
 ------------------------------------------------------------------------------------------------
 
 select
- cast( CONVERT(char(10), CAST( STUFF( STUFF(Dia_Execucao, 5, 0, '-'), 8, 0, '-') AS date), 120 ) as date) AS DataFormatada
+ try_cast( try_CONVERT(char(10), try_CAST( STUFF( STUFF(Dia_Execucao, 5, 0, '-'), 8, 0, '-') AS date), 120 ) as date) AS DataFormatada
 
-,cast(STUFF( STUFF( RIGHT( '0' + Hora_execucao, 6), 3, 0, ':'), 6, 0, ':') as time) AS TempoFormatado
+,try_cast(STUFF( STUFF( RIGHT( '0' + Hora_execucao, 6), 3, 0, ':'), 6, 0, ':') as time) AS TempoFormatado
 ,t.instance_id
 ,t.Name
 ,t.step_name as Step_Name
@@ -17,7 +17,7 @@ select
 ,t.run_status
 ,t.message
 ,t.command
-
+,database_name
 into #JobStatus
 from(
 
@@ -37,6 +37,7 @@ from(
 		,case when len(cast(h.run_time as nvarchar(6))) = 5 then concat('0', cast(h.run_time as nvarchar(6))) else cast(h.run_time as nvarchar(6)) end Hora_execucao
 		,h.run_duration
 		,st.command
+		,st.database_name
 		from msdb.dbo.sysjobhistory h
 
 		left join msdb.dbo.sysjobs j
@@ -63,6 +64,7 @@ select
  CAST( LEFT( concat( concat(DataFormatada, ' '), TempoFormatado), 19) as datetime) as Run_date_time
 ,Name as Job
 ,Step_ID
+,database_name
 ,Step_Name
 ,command
 ,Run_Status
@@ -70,10 +72,6 @@ select
 from #JobStatus
 
 where 1=1
---and Step_Name <> '(Job outcome)'
---and name in ('Rotinas HH','foto contratos')
 --and run_status <> 1		---> filtrando todos os possíveis erros
 
-
 order by 1 desc
-
