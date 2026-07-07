@@ -1,0 +1,33 @@
+IF OBJECT_ID('tempdb..#LogSpace') IS NOT NULL
+    DROP TABLE #LogSpace;
+
+CREATE TABLE #LogSpace
+(
+    DatabaseName SYSNAME,
+    LogSizeMB FLOAT,
+    LogSpaceUsedPct FLOAT,
+    Status INT
+);
+
+INSERT INTO #LogSpace
+EXEC('DBCC SQLPERF(LOGSPACE)');
+
+SELECT
+    d.name AS Banco,
+    CAST(SUM(CASE WHEN mf.type_desc = 'ROWS' THEN mf.size END) * 8.0 / 1024 AS DECIMAL(18,2)) AS MDF_MB,
+    CAST(SUM(CASE WHEN mf.type_desc = 'LOG' THEN mf.size END) * 8.0 / 1024 AS DECIMAL(18,2)) AS LDF_MB,
+    CAST(ls.LogSpaceUsedPct AS DECIMAL(18,2)) AS Log_Usado_Perc,
+    CAST(ls.LogSizeMB * (ls.LogSpaceUsedPct / 100.0) AS DECIMAL(18,2)) AS Log_Usado_MB,
+    CAST(ls.LogSizeMB * ((100 - ls.LogSpaceUsedPct) / 100.0) AS DECIMAL(18,2)) AS Log_Livre_MB
+FROM sys.databases d
+INNER JOIN sys.master_files mf
+    ON d.database_id = mf.database_id
+INNER JOIN #LogSpace ls
+    ON d.name = ls.DatabaseName
+GROUP BY
+    d.name,
+    ls.LogSizeMB,
+    ls.LogSpaceUsedPct
+ORDER BY 6 DESC;
+
+
