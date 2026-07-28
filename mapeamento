@@ -1,0 +1,34 @@
+--> Retornas as procedures
+select 'use ' + name +
+' SELECT 
+SCHEMA_NAME(p.schema_id) AS schema_name, 
+p.name AS procedure_name, 
+m.definition AS procedure_text 
+FROM sys.procedures AS p
+LEFT JOIN sys.sql_modules as m ON m.object_id = p.object_id'
+from sys.databases
+where database_id not in (1,2,3,4,6,15,18)
+
+
+
+
+--> Retornas as tabelas
+select 'use ' + name +
+'
+SELECT
+    c.TABLE_SCHEMA AS schema_name, 
+    c.TABLE_NAME AS table_name, 
+    c.ORDINAL_POSITION AS column_position, 
+    c.COLUMN_NAME AS column_name, 
+    CASE WHEN c.DATA_TYPE IN (''varchar'', ''nvarchar'', ''char'', ''nchar'',''varbinary'', ''binary'') THEN c.DATA_TYPE + ''('' +
+    CASE WHEN c.CHARACTER_MAXIMUM_LENGTH = -1 THEN ''MAX'' ELSE CAST(c.CHARACTER_MAXIMUM_LENGTH AS VARCHAR(20)) END + '')''
+        WHEN c.DATA_TYPE IN (''decimal'', ''numeric'') THEN c.DATA_TYPE + ''('' + CAST(c.NUMERIC_PRECISION AS VARCHAR(20)) + '','' + CAST(c.NUMERIC_SCALE AS VARCHAR(20)) + '')''
+        WHEN c.DATA_TYPE IN (''datetime2'', ''datetimeoffset'', ''time'')
+        THEN c.DATA_TYPE + ''('' + CAST(c.DATETIME_PRECISION AS VARCHAR(20)) + '')'' ELSE c.DATA_TYPE
+    END AS complete_data_type, 
+    c.IS_NULLABLE AS is_nullable, 
+    c.COLLATION_NAME
+FROM INFORMATION_SCHEMA.COLUMNS AS c '
+from sys.databases
+where database_id not in (1,2,3,4,6,15,18)
+
